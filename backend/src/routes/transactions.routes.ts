@@ -17,7 +17,7 @@ import {
   getTransactionsCount,
   updateTransaction,
 } from "../models/transaction.model";
-import { validateCategoryId } from "./categories.routes";
+import { isValidCategoryId } from "../models/category.model";
 
 const router = Router();
 
@@ -95,7 +95,7 @@ router.post(
       // Verify category belongs to user or is null
       if (category_id) {
         // Verify category is valid
-        if (!validateCategoryId(category_id)) {
+        if (!isValidCategoryId(category_id)) {
           res.status(400).json({ error: "Invalid category" });
           return;
         }
@@ -181,7 +181,7 @@ router.put(
       // Verify category if provided
       if (req.body.category_id) {
         // Verify category is valid
-        if (!validateCategoryId(req.body.category_id)) {
+        if (!isValidCategoryId(req.body.category_id)) {
           res.status(400).json({ error: "Invalid category" });
           return;
         }

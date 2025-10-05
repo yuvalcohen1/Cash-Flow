@@ -4,7 +4,25 @@ import {
   SummaryData,
   TrendData,
 } from "../interfaces/charts.interface";
-import { getCategoryName } from "../routes/categories.routes";
+import { getCategoryById } from "./category.model";
+
+const getMonthName = (monthIndex: number): string => {
+  const months = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ];
+  return months[monthIndex];
+};
 
 export const getDateRange = (
   period: string
@@ -79,25 +97,6 @@ export const getDateRange = (
   }
 };
 
-const getMonthName = (monthIndex: number): string => {
-  const months = [
-    "Jan",
-    "Feb",
-    "Mar",
-    "Apr",
-    "May",
-    "Jun",
-    "Jul",
-    "Aug",
-    "Sep",
-    "Oct",
-    "Nov",
-    "Dec",
-  ];
-  return months[monthIndex];
-};
-
-// Database queries
 export const getSummaryData = (
   userId: number,
   startDate: string,
@@ -286,14 +285,14 @@ export const getCategoryBreakdownData = (
   const totalExpenses = expenseData.reduce((sum, item) => sum + item.total, 0);
 
   const income = incomeData.map((item) => ({
-    category: getCategoryName(item.category_id) || "Unknown",
+    category: getCategoryById(item.category_id)?.name || "Unknown",
     amount: item.total,
     percentage:
       totalIncome > 0 ? Math.round((item.total / totalIncome) * 100) : 0,
   }));
 
   const expenses = expenseData.map((item) => ({
-    category: getCategoryName(item.category_id) || "Unknown",
+    category: getCategoryById(item.category_id)?.name || "Unknown",
     amount: item.total,
     percentage:
       totalExpenses > 0 ? Math.round((item.total / totalExpenses) * 100) : 0,

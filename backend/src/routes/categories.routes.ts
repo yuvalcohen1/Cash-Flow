@@ -3,11 +3,7 @@ import { validationResult } from "express-validator";
 import { AuthRequest } from "../interfaces/AuthRequest.interface";
 import { authenticateToken } from "../middlewares/auth.middleware";
 import { validateCategoryQuery } from "../middlewares/validation.middleware";
-import {
-  getCategoriesByType,
-  getCategoryById,
-  isValidCategoryId,
-} from "../models/category.model";
+import { getCategoriesByType, getCategoryById } from "../models/category.model";
 
 const router = express.Router();
 
@@ -79,15 +75,5 @@ router.get(
     }
   }
 );
-
-// Utility function to export for use in other modules
-export const validateCategoryId = (id: number): boolean => {
-  return isValidCategoryId(id);
-};
-
-export const getCategoryName = (id: number): string | undefined => {
-  const category = getCategoryById(id);
-  return category?.name;
-};
 
 export default router;

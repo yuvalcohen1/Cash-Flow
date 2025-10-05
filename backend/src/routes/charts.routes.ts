@@ -1,17 +1,17 @@
-import express, { Request, Response, Router } from "express";
+import { Response, Router } from "express";
+import { validationResult } from "express-validator";
+import { AuthRequest } from "../interfaces/AuthRequest.interface";
+import { authenticateToken } from "../middlewares/auth.middleware";
+import {
+  validatePeriodQuery,
+  validateTrendsQuery,
+} from "../middlewares/validation.middleware";
 import {
   getCategoryBreakdownData,
   getDateRange,
   getSummaryData,
   getTrendsData,
 } from "../models/charts.model";
-import { authenticateToken } from "../middlewares/auth.middleware";
-import {
-  validatePeriodQuery,
-  validateTrendsQuery,
-} from "../middlewares/validation.middleware";
-import { AuthRequest } from "../interfaces/AuthRequest.interface";
-import { validationResult } from "express-validator";
 
 const router = Router();
 

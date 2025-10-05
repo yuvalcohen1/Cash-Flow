@@ -1,17 +1,17 @@
 import { Request, Response, Router } from "express";
-import { body, validationResult } from "express-validator";
+import { validationResult } from "express-validator";
+import { AuthRequest } from "../interfaces/AuthRequest.interface";
+import { authenticateToken } from "../middlewares/auth.middleware";
+import { generateToken } from "../middlewares/jwt.middleware";
+import {
+  comparePassword,
+  hashPassword,
+} from "../middlewares/password.middleware";
 import {
   validateLogin,
   validateRegister,
 } from "../middlewares/validation.middleware";
 import { createUser, getUserByEmail, getUserById } from "../models/user.model";
-import {
-  comparePassword,
-  hashPassword,
-} from "../middlewares/password.middleware";
-import { generateToken } from "../middlewares/jwt.middleware";
-import { authenticateToken } from "../middlewares/auth.middleware";
-import { AuthRequest } from "../interfaces/AuthRequest.interface";
 
 const router = Router();
 
