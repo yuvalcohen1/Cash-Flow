@@ -1,4 +1,6 @@
 import {
+  ChevronLeft,
+  ChevronRight,
   Edit3,
   Plus,
   Search,
@@ -28,9 +30,18 @@ export const Transactions: React.FC = () => {
     page: 1,
   });
 
+  const [pagination, setPagination] = useState({
+    total: 0,
+    totalPages: 0,
+    hasNext: false,
+    hasPrev: false,
+  });
+
   useEffect(() => {
-    fetchTransactions();
-  }, [filters]);
+    if (token) {
+      fetchTransactions();
+    }
+  }, [filters, token]);
 
   const fetchTransactions = async () => {
     if (!token) return;
@@ -38,7 +49,7 @@ export const Transactions: React.FC = () => {
       setLoading(true);
       const response = await api.getTransactions(token, {
         ...filters,
-        limit: 20,
+        limit: 6,
       });
 
       // Add category names to transactions
@@ -49,6 +60,7 @@ export const Transactions: React.FC = () => {
         })) || [];
 
       setTransactions(transactionsWithCategories);
+      setPagination(response.pagination);
     } catch (error) {
       console.error("Error fetching transactions:", error);
     } finally {
@@ -89,6 +101,34 @@ export const Transactions: React.FC = () => {
     }
   };
 
+  // Pagination handlers
+  const nextPage = () => {
+    if (pagination.hasNext) {
+      setFilters((prev) => ({ ...prev, page: prev.page + 1 }));
+    }
+  };
+
+  const prevPage = () => {
+    if (pagination.hasPrev) {
+      setFilters((prev) => ({ ...prev, page: prev.page - 1 }));
+    }
+  };
+
+  const goToPage = (page: number) => {
+    if (page >= 1 && page <= pagination.totalPages) {
+      setFilters((prev) => ({ ...prev, page }));
+    }
+  };
+
+  // Helper to update filters and reset page
+  const updateFilters = (newFilters: Partial<typeof filters>) => {
+    setFilters((prev) => ({
+      ...prev,
+      ...newFilters,
+      page: 1, // Reset to first page when filters change
+    }));
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -111,9 +151,7 @@ export const Transactions: React.FC = () => {
             </label>
             <select
               value={filters.type}
-              onChange={(e) =>
-                setFilters({ ...filters, type: e.target.value, page: 1 })
-              }
+              onChange={(e) => updateFilters({ type: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="">All Types</option>
@@ -128,9 +166,7 @@ export const Transactions: React.FC = () => {
             </label>
             <select
               value={filters.category}
-              onChange={(e) =>
-                setFilters({ ...filters, category: e.target.value, page: 1 })
-              }
+              onChange={(e) => updateFilters({ category: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="">All Categories</option>
@@ -150,9 +186,7 @@ export const Transactions: React.FC = () => {
               <input
                 type="text"
                 value={filters.search}
-                onChange={(e) =>
-                  setFilters({ ...filters, search: e.target.value, page: 1 })
-                }
+                onChange={(e) => updateFilters({ search: e.target.value })}
                 className="w-full px-3 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="Search transactions..."
               />
@@ -176,65 +210,130 @@ export const Transactions: React.FC = () => {
             No transactions found
           </div>
         ) : (
-          <div className="divide-y divide-gray-100">
-            {transactions.map((transaction) => (
-              <div
-                key={transaction.id}
-                className="p-4 hover:bg-gray-50 flex items-center justify-between"
-              >
-                <div className="flex items-center space-x-4">
-                  <div
-                    className={`w-12 h-12 rounded-full flex items-center justify-center text-white ${
-                      transaction.type === "income"
-                        ? "bg-green-500"
-                        : "bg-red-500"
-                    }`}
-                  >
-                    {transaction.type === "income" ? (
-                      <TrendingUp size={20} />
-                    ) : (
-                      <TrendingDown size={20} />
-                    )}
+          <>
+            <div className="divide-y divide-gray-100">
+              {transactions.map((transaction) => (
+                <div
+                  key={transaction.id}
+                  className="p-4 hover:bg-gray-50 flex items-center justify-between"
+                >
+                  <div className="flex items-center space-x-4">
+                    <div
+                      className={`w-12 h-12 rounded-full flex items-center justify-center text-white ${
+                        transaction.type === "income"
+                          ? "bg-green-500"
+                          : "bg-red-500"
+                      }`}
+                    >
+                      {transaction.type === "income" ? (
+                        <TrendingUp size={20} />
+                      ) : (
+                        <TrendingDown size={20} />
+                      )}
+                    </div>
+                    <div>
+                      <h3 className="font-medium text-gray-900">
+                        {transaction.description || "No description"}
+                      </h3>
+                      <p className="text-sm text-gray-500">
+                        {transaction.category_name || "No category"} •{" "}
+                        {new Date(transaction.date).toLocaleDateString()}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="font-medium text-gray-900">
-                      {transaction.description || "No description"}
-                    </h3>
-                    <p className="text-sm text-gray-500">
-                      {transaction.category_name || "No category"} •{" "}
-                      {new Date(transaction.date).toLocaleDateString()}
-                    </p>
+                  <div className="flex items-center space-x-4">
+                    <span
+                      className={`font-bold text-lg ${
+                        transaction.type === "income"
+                          ? "text-green-600"
+                          : "text-red-600"
+                      }`}
+                    >
+                      {transaction.type === "income" ? "+" : "-"}$
+                      {transaction.amount.toFixed(2)}
+                    </span>
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => setEditTransaction(transaction)}
+                        className="text-blue-600 hover:text-blue-800 p-1"
+                      >
+                        <Edit3 size={16} />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteTransaction(transaction.id)}
+                        className="text-red-600 hover:text-red-800 p-1"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
                   </div>
                 </div>
-                <div className="flex items-center space-x-4">
-                  <span
-                    className={`font-bold text-lg ${
-                      transaction.type === "income"
-                        ? "text-green-600"
-                        : "text-red-600"
-                    }`}
+              ))}
+            </div>
+
+            {/* Pagination Controls */}
+            {pagination.totalPages > 1 && (
+              <div className="p-4 border-t border-gray-100 flex items-center justify-between">
+                <div className="text-sm text-gray-600">
+                  Showing page {filters.page} of {pagination.totalPages} (
+                  {pagination.total} total transactions)
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={prevPage}
+                    disabled={!pagination.hasPrev}
+                    className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
                   >
-                    {transaction.type === "income" ? "+" : "-"}$
-                    {transaction.amount.toFixed(2)}
-                  </span>
-                  <div className="flex space-x-2">
-                    <button
-                      onClick={() => setEditTransaction(transaction)}
-                      className="text-blue-600 hover:text-blue-800 p-1"
-                    >
-                      <Edit3 size={16} />
-                    </button>
-                    <button
-                      onClick={() => handleDeleteTransaction(transaction.id)}
-                      className="text-red-600 hover:text-red-800 p-1"
-                    >
-                      <Trash2 size={16} />
-                    </button>
+                    <ChevronLeft size={16} />
+                    Previous
+                  </button>
+
+                  {/* Page numbers */}
+                  <div className="flex gap-1">
+                    {Array.from(
+                      { length: pagination.totalPages },
+                      (_, i) => i + 1
+                    )
+                      .filter((page) => {
+                        // Show first page, last page, current page, and adjacent pages
+                        return (
+                          page === 1 ||
+                          page === pagination.totalPages ||
+                          Math.abs(page - filters.page) <= 1
+                        );
+                      })
+                      .map((page, index, array) => (
+                        <React.Fragment key={page}>
+                          {/* Add ellipsis if there's a gap */}
+                          {index > 0 && array[index - 1] !== page - 1 && (
+                            <span className="px-2 py-2 text-gray-500">...</span>
+                          )}
+                          <button
+                            onClick={() => goToPage(page)}
+                            className={`px-3 py-2 rounded-lg ${
+                              page === filters.page
+                                ? "bg-blue-600 text-white"
+                                : "border border-gray-300 hover:bg-gray-50"
+                            }`}
+                          >
+                            {page}
+                          </button>
+                        </React.Fragment>
+                      ))}
                   </div>
+
+                  <button
+                    onClick={nextPage}
+                    disabled={!pagination.hasNext}
+                    className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                  >
+                    Next
+                    <ChevronRight size={16} />
+                  </button>
                 </div>
               </div>
-            ))}
-          </div>
+            )}
+          </>
         )}
       </div>
 

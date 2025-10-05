@@ -42,8 +42,11 @@ router.get(
         startDate: req.query.startDate as string | undefined,
         endDate: req.query.endDate as string | undefined,
         search: req.query.search as string | undefined,
-        page: parseInt(req.query.page as string) || 1,
-        limit: parseInt(req.query.limit as string) || 10,
+        page: Math.max(1, parseInt(req.query.page as string) || 1),
+        limit: Math.min(
+          100,
+          Math.max(1, parseInt(req.query.limit as string) || 10)
+        ),
         sortBy: (req.query.sortBy as string) || "date",
         order: (req.query.order as "asc" | "desc") || "desc",
       };
