@@ -1,36 +1,34 @@
-# Dependencies
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
+# Root-level ignores
 
 # Environment variables
 .env
 .env.local
 .env.*.local
+*.env
 
-# Database
+# Databases and data
 data/
 *.db
 *.sqlite
 *.sqlite3
 
-# Build outputs
-dist/
-build/
-.vite/
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-
-# OS
-.DS_Store
-Thumbs.db
-
 # Logs
 logs/
 *.log
+
+# OS and IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Docker
+*.pid
+*.tmp
+tmp/
+.docker/
+docker-compose.override.yml
+
+# Build outputs (if root scripts build all)
+dist/
+build/

@@ -1,0 +1,39 @@
+# Python / FastAPI
+
+# Bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+venv/
+env/
+.venv/
+.env/
+venv.bak/
+env.bak/
+
+# Environment
+.env
+.env.*
+
+# Logs
+logs/
+*.log
+*.pid
+
+# SQLite / Data
+*.db
+data/
+
+# IDE
+.vscode/
+.idea/
+.DS_Store
+
+# Cache / build
+dist/
+build/
+.tox/
+.pytest_cache/
+.mypy_cache/
