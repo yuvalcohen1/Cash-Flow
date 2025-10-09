@@ -1,5 +1,3 @@
-# app/api/routes/reports.py
-
 from fastapi import APIRouter, HTTPException, Depends
 from app.api.schemas import ReportRequest, ReportResponse, InsightsResponse
 from app.services.report_generator import ReportGenerator
@@ -7,20 +5,6 @@ from app.core.auth import get_current_user_id
 from app.core.database import db
 
 router = APIRouter()
-
-
-@router.get("/debug-auth")
-async def debug_auth(user_id: int = Depends(get_current_user_id)):
-    """
-    Debug endpoint to verify JWT authentication is working
-    Returns the extracted user_id
-    """
-    return {
-        "message": "Authentication successful",
-        "user_id": user_id,
-        "user_id_type": str(type(user_id))
-    }
-
 
 @router.post("/generate", response_model=ReportResponse)
 async def generate_report(
