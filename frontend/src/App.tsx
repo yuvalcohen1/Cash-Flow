@@ -5,6 +5,7 @@ import { Header } from "./components/Header";
 import { Login } from "./pages/Login";
 import { Dashboard } from "./pages/Dashboard";
 import { Transactions } from "./pages/Transactions";
+import { Reports } from "./pages/Reports";
 
 const AppContent: React.FC = () => {
   const { user, isLoading } = useAuth();
@@ -35,6 +36,7 @@ const AppContent: React.FC = () => {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {currentView === "dashboard" && <Dashboard />}
         {currentView === "transactions" && <Transactions />}
+        {currentView === "reports" && <Reports />}
       </main>
     </div>
   );

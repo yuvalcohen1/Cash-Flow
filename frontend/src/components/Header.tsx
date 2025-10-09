@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { DollarSign, LogOut, User } from "lucide-react";
+import { DollarSign, LogOut, User, FileText } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 
 interface HeaderProps {
@@ -46,6 +46,17 @@ export const Header: React.FC<HeaderProps> = ({
                 }`}
               >
                 Transactions
+              </button>
+              <button
+                onClick={() => setCurrentView("reports")}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                  currentView === "reports"
+                    ? "bg-blue-100 text-blue-700"
+                    : "text-gray-700 hover:bg-gray-100"
+                }`}
+              >
+                <FileText size={20} />
+                Reports
               </button>
             </nav>
           </div>
@@ -108,6 +119,17 @@ export const Header: React.FC<HeaderProps> = ({
             }`}
           >
             Transactions
+          </button>
+          <button
+            onClick={() => setCurrentView("reports")}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+              currentView === "reports"
+                ? "bg-blue-100 text-blue-700"
+                : "text-gray-700 hover:bg-gray-100"
+            }`}
+          >
+            <FileText size={20} />
+            Reports
           </button>
         </nav>
       </div>
