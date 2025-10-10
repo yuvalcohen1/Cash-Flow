@@ -118,19 +118,34 @@ export const Dashboard: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <SummaryCard
             title="Total Income"
-            value={`$${summaryData?.totalIncome?.toLocaleString() || "0"}`}
+            value={`$${
+              summaryData?.totalIncome?.toLocaleString(undefined, {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              }) || "0.00"
+            }`}
             icon={<TrendingUp className="text-green-600" size={24} />}
             color="text-green-600"
           />
           <SummaryCard
             title="Total Expenses"
-            value={`$${summaryData?.totalExpenses?.toLocaleString() || "0"}`}
+            value={`$${
+              summaryData?.totalExpenses?.toLocaleString(undefined, {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              }) || "0.00"
+            }`}
             icon={<TrendingDown className="text-red-600" size={24} />}
             color="text-red-600"
           />
           <SummaryCard
             title="Balance"
-            value={`$${summaryData?.balance}`}
+            value={`$${
+              summaryData?.balance?.toLocaleString(undefined, {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              }) || "0.00"
+            }`}
             icon={<DollarSign className="text-blue-600" size={24} />}
             color={
               summaryData?.balance !== undefined && summaryData.balance >= 0
