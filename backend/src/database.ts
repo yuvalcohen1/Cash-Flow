@@ -47,6 +47,39 @@ db.prepare(
 `
 ).run();
 
+// AI Reports table
+db.prepare(
+  `
+  CREATE TABLE IF NOT EXISTS ai_reports (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    report_text TEXT NOT NULL,
+    processed_insights TEXT NOT NULL,  -- JSON string
+    start_date TEXT,
+    end_date TEXT,
+    num_transactions INTEGER NOT NULL,
+    savings_rate REAL,
+    total_income REAL,
+    total_expenses REAL,
+    model_used TEXT DEFAULT 'gemini-2.5-flash',
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+  )
+`
+).run();
+
+db.prepare(
+  `
+  CREATE INDEX IF NOT EXISTS idx_reports_user_id ON ai_reports(user_id)
+`
+).run();
+
+db.prepare(
+  `
+  CREATE INDEX IF NOT EXISTS idx_reports_created_at ON ai_reports(created_at DESC)
+`
+).run();
+
 // Trigger to auto-update updated_at
 db.prepare(
   `

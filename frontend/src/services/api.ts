@@ -189,6 +189,53 @@ class ApiService {
 
     return response.json();
   }
+
+  async getReportHistory(
+    token: string,
+    limit: number = 10,
+    offset: number = 0
+  ) {
+    const response = await fetch(
+      `${this.reportsBaseUrl}/history?limit=${limit}&offset=${offset}`,
+      {
+        headers: this.getHeaders(token),
+      }
+    );
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || "Failed to fetch report history");
+    }
+
+    return response.json();
+  }
+
+  async getReportById(token: string, reportId: number) {
+    const response = await fetch(`${this.reportsBaseUrl}/history/${reportId}`, {
+      headers: this.getHeaders(token),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || "Failed to fetch report");
+    }
+
+    return response.json();
+  }
+
+  async deleteReport(token: string, reportId: number) {
+    const response = await fetch(`${this.reportsBaseUrl}/history/${reportId}`, {
+      method: "DELETE",
+      headers: this.getHeaders(token),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || "Failed to delete report");
+    }
+
+    return response.json();
+  }
 }
 
 export const api = new ApiService();

@@ -14,6 +14,7 @@ class ReportResponse(BaseModel):
     processed_insights: dict
     metadata: dict
     model_used: str
+    report_id: Optional[int] = None
 
 
 class InsightsResponse(BaseModel):
