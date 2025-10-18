@@ -33,7 +33,7 @@ router.post(
       const { name, email, password } = req.body;
 
       // Check if user already exists
-      const existingUser = getUserByEmail(email);
+      const existingUser = await getUserByEmail(email);
       if (existingUser) {
         res.status(409).json({ error: "User with this email already exists" });
         return;
@@ -41,7 +41,7 @@ router.post(
 
       // Hash password and create user
       const passwordHash = await hashPassword(password);
-      const user = createUser(name, email, passwordHash);
+      const user = await createUser(name, email, passwordHash);
 
       // Generate JWT token
       const token = generateToken({ userId: user.id, email: user.email });
@@ -81,7 +81,7 @@ router.post(
       const { email, password } = req.body;
 
       // Find user
-      const user = getUserByEmail(email);
+      const user = await getUserByEmail(email);
       if (!user) {
         res.status(401).json({ error: "Invalid credentials" });
         return;
@@ -147,9 +147,9 @@ router.post(
 router.get(
   "/me",
   authenticateToken,
-  (req: AuthRequest, res: Response): void => {
+  async (req: AuthRequest, res: Response) => {
     try {
-      const user = getUserById(req.user!.id);
+      const user = await getUserById(req.user!.id);
       if (!user) {
         res.status(404).json({ error: "User not found" });
         return;

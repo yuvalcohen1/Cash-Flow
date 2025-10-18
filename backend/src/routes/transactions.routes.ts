@@ -26,7 +26,7 @@ router.get(
   "/",
   authenticateToken,
   validateQuery,
-  (req: AuthRequest, res: Response): void => {
+  async (req: AuthRequest, res: Response) => {
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
@@ -52,8 +52,8 @@ router.get(
       };
 
       const userId = req.user!.id;
-      const transactions = getTransactions(userId, filters);
-      const total = getTransactionsCount(userId, filters);
+      const transactions = await getTransactions(userId, filters);
+      const total = await getTransactionsCount(userId, filters);
       const totalPages = Math.ceil(total / filters.limit);
 
       res.json({
@@ -79,7 +79,7 @@ router.post(
   "/",
   authenticateToken,
   validateTransaction,
-  (req: AuthRequest, res: Response): void => {
+  async (req: AuthRequest, res: Response) => {
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
@@ -101,7 +101,7 @@ router.post(
         }
       }
 
-      const transaction = createTransaction(userId, {
+      const transaction = await createTransaction(userId, {
         type,
         amount,
         category_id: category_id || null,
@@ -125,7 +125,7 @@ router.get(
   "/:id",
   authenticateToken,
   validateId,
-  (req: AuthRequest, res: Response): void => {
+  async (req: AuthRequest, res: Response) => {
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
@@ -138,7 +138,7 @@ router.get(
       const transactionId = parseInt(req.params.id);
       const userId = req.user!.id;
 
-      const transaction = getTransactionById(transactionId, userId);
+      const transaction = await getTransactionById(transactionId, userId);
       if (!transaction) {
         res.status(404).json({ error: "Transaction not found" });
         return;
@@ -158,7 +158,7 @@ router.put(
   authenticateToken,
   validateId,
   validateTransactionUpdate,
-  (req: AuthRequest, res: Response): void => {
+  async (req: AuthRequest, res: Response) => {
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
@@ -172,7 +172,10 @@ router.put(
       const userId = req.user!.id;
 
       // Check if transaction exists and belongs to user
-      const existingTransaction = getTransactionById(transactionId, userId);
+      const existingTransaction = await getTransactionById(
+        transactionId,
+        userId
+      );
       if (!existingTransaction) {
         res.status(404).json({ error: "Transaction not found" });
         return;
@@ -197,7 +200,11 @@ router.put(
       if (req.body.date)
         updateData.date = new Date(req.body.date).toISOString().split("T")[0];
 
-      const transaction = updateTransaction(transactionId, userId, updateData);
+      const transaction = await updateTransaction(
+        transactionId,
+        userId,
+        updateData
+      );
       if (!transaction) {
         res.status(400).json({ error: "Failed to update transaction" });
         return;
@@ -219,7 +226,7 @@ router.delete(
   "/:id",
   authenticateToken,
   validateId,
-  (req: AuthRequest, res: Response): void => {
+  async (req: AuthRequest, res: Response) => {
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
@@ -232,7 +239,7 @@ router.delete(
       const transactionId = parseInt(req.params.id);
       const userId = req.user!.id;
 
-      const success = deleteTransaction(transactionId, userId);
+      const success = await deleteTransaction(transactionId, userId);
       if (!success) {
         res.status(404).json({ error: "Transaction not found" });
         return;

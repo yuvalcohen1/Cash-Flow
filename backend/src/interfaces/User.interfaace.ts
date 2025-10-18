@@ -1,7 +1,7 @@
 export interface User {
-  id: number;
+  id: string; // UUID
   name: string;
   email: string;
   password_hash: string;
-  created_at: string;
+  created_at: Date;
 }

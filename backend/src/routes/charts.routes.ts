@@ -20,7 +20,7 @@ router.get(
   "/summary",
   authenticateToken,
   validatePeriodQuery,
-  (req: AuthRequest, res: Response): void => {
+  async (req: AuthRequest, res: Response) => {
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
@@ -46,7 +46,7 @@ router.get(
         label = dateRange.label;
       }
 
-      const summary = getSummaryData(userId, startDate, endDate);
+      const summary = await getSummaryData(userId, startDate, endDate);
       summary.period = label;
 
       res.json(summary);
@@ -62,7 +62,7 @@ router.get(
   "/trends",
   authenticateToken,
   validateTrendsQuery,
-  (req: AuthRequest, res: Response): void => {
+  async (req: AuthRequest, res: Response) => {
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
@@ -79,7 +79,7 @@ router.get(
         ? parseInt(req.query.year as string)
         : undefined;
 
-      const trends = getTrendsData(userId, period, months, year);
+      const trends = await getTrendsData(userId, period, months, year);
 
       res.json(trends);
     } catch (error) {
@@ -94,7 +94,7 @@ router.get(
   "/category-breakdown",
   authenticateToken,
   validatePeriodQuery,
-  (req: AuthRequest, res: Response): void => {
+  async (req: AuthRequest, res: Response) => {
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
@@ -120,7 +120,11 @@ router.get(
         label = dateRange.label;
       }
 
-      const breakdown = getCategoryBreakdownData(userId, startDate, endDate);
+      const breakdown = await getCategoryBreakdownData(
+        userId,
+        startDate,
+        endDate
+      );
       breakdown.period = label;
 
       res.json(breakdown);

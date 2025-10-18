@@ -9,7 +9,7 @@ router = APIRouter()
 @router.post("/generate", response_model=ReportResponse)
 async def generate_report(
     request: ReportRequest,
-    user_id: int = Depends(get_current_user_id)
+    user_id: str = Depends(get_current_user_id)
 ):
     """
     Generate a personalized financial report from user's transaction data
@@ -62,7 +62,7 @@ async def generate_report(
 
 @router.get("/history")
 async def get_report_history(
-    user_id: int = Depends(get_current_user_id),
+    user_id: str = Depends(get_current_user_id),
     limit: int = Query(default=10, ge=1, le=50),
     offset: int = Query(default=0, ge=0)
 ):
@@ -86,7 +86,7 @@ async def get_report_history(
 
 
 @router.get("/history/{report_id}")
-async def get_report_by_id(report_id: int, user_id: int = Depends(get_current_user_id),):
+async def get_report_by_id(report_id: int, user_id: str = Depends(get_current_user_id),):
     """
     Get a specific report by ID
     Protected endpoint - requires valid JWT token
@@ -112,7 +112,7 @@ async def get_report_by_id(report_id: int, user_id: int = Depends(get_current_us
 
 
 @router.delete("/history/{report_id}")
-async def delete_report(report_id: int, user_id: int = Depends(get_current_user_id),):
+async def delete_report(report_id: int, user_id: str = Depends(get_current_user_id),):
     """
     Delete a report by ID
     Protected endpoint - requires valid JWT token
@@ -141,7 +141,7 @@ async def delete_report(report_id: int, user_id: int = Depends(get_current_user_
 @router.post("/insights", response_model=InsightsResponse)
 async def generate_insights(
     request: ReportRequest,
-    user_id: int = Depends(get_current_user_id)
+    user_id: str = Depends(get_current_user_id)
 ):
     """
     Generate only the processed insights without LLM generation

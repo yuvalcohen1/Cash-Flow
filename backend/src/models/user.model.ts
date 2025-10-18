@@ -1,25 +1,30 @@
-import db from "../database";
+import { query } from "../database";
 import { User } from "../interfaces/User.interfaace";
 
-export const getUserByEmail = (email: string): User | undefined => {
-  const stmt = db.prepare("SELECT * FROM users WHERE email = ?");
-  return stmt.get(email) as User | undefined;
-};
-
-export const getUserById = (id: number): User | undefined => {
-  const stmt = db.prepare("SELECT * FROM users WHERE id = ?");
-  return stmt.get(id) as User | undefined;
-};
-
-export const createUser = (
+export const createUser = async (
   name: string,
   email: string,
   passwordHash: string
-): User => {
-  const stmt = db.prepare(`
-    INSERT INTO users (name, email, password_hash)
-    VALUES (?, ?, ?)
-  `);
-  const result = stmt.run(name, email, passwordHash);
-  return getUserById(result.lastInsertRowid as number)!;
+): Promise<User> => {
+  // Let PostgreSQL generate the UUID using gen_random_uuid()
+  const result = await query(
+    `INSERT INTO users (name, email, password_hash)
+     VALUES ($1, $2, $3)
+     RETURNING *`,
+    [name, email, passwordHash]
+  );
+
+  return result.rows[0];
+};
+
+export const getUserByEmail = async (email: string): Promise<User | null> => {
+  const result = await query(`SELECT * FROM users WHERE email = $1`, [email]);
+
+  return result.rows[0] || null;
+};
+
+export const getUserById = async (id: string): Promise<User | null> => {
+  const result = await query(`SELECT * FROM users WHERE id = $1`, [id]);
+
+  return result.rows[0] || null;
 };

@@ -1,4 +1,4 @@
-import db from "../database";
+import { query } from "../database";
 import {
   CategoryBreakdown,
   SummaryData,
@@ -97,30 +97,38 @@ export const getDateRange = (
   }
 };
 
-export const getSummaryData = (
-  userId: number,
+export const getSummaryData = async (
+  userId: string, // UUID
   startDate: string,
   endDate: string
-): SummaryData => {
-  const stmt = db.prepare(`
-    SELECT 
+): Promise<SummaryData> => {
+  const result = await query(
+    `SELECT 
       type,
       COALESCE(SUM(amount), 0) as total,
       COUNT(*) as count
     FROM transactions 
-    WHERE user_id = ? AND date >= ? AND date <= ?
-    GROUP BY type
-  `);
+    WHERE user_id = $1 AND date >= $2 AND date <= $3
+    GROUP BY type`,
+    [userId, startDate, endDate]
+  );
 
-  const results = stmt.all(userId, startDate, endDate) as Array<{
+  const results = result.rows as Array<{
     type: string;
-    total: number;
-    count: number;
+    total: string; // PostgreSQL returns numeric as string
+    count: string;
   }>;
 
-  const income = results.find((r) => r.type === "income")?.total || 0;
-  const expenses = results.find((r) => r.type === "expense")?.total || 0;
-  const transactionCount = results.reduce((sum, r) => sum + r.count, 0);
+  const income = parseFloat(
+    results.find((r) => r.type === "income")?.total || "0"
+  );
+  const expenses = parseFloat(
+    results.find((r) => r.type === "expense")?.total || "0"
+  );
+  const transactionCount = results.reduce(
+    (sum, r) => sum + parseInt(r.count),
+    0
+  );
 
   return {
     totalIncome: income,
@@ -131,40 +139,38 @@ export const getSummaryData = (
   };
 };
 
-export const getTrendsData = (
-  userId: number,
+export const getTrendsData = async (
+  userId: string, // UUID
   period: string,
   months: number,
   year?: number
-): TrendData => {
+): Promise<TrendData> => {
   const currentDate = new Date();
   const targetYear = year || currentDate.getFullYear();
 
   if (period === "monthly") {
     // Get monthly data for the specified number of months
-    const endMonth = year ? 11 : currentDate.getMonth(); // If specific year, go to December; otherwise current month
+    const endMonth = year ? 11 : currentDate.getMonth();
     const startMonth = Math.max(0, endMonth - months + 1);
 
-    const stmt = db.prepare(`
-      SELECT 
-        strftime('%m', date) as month,
+    const result = await query(
+      `SELECT 
+        EXTRACT(MONTH FROM date)::integer as month,
         type,
         COALESCE(SUM(amount), 0) as total
       FROM transactions 
-      WHERE user_id = ? AND strftime('%Y', date) = ? AND CAST(strftime('%m', date) AS INTEGER) BETWEEN ? AND ?
-      GROUP BY strftime('%m', date), type
-      ORDER BY month
-    `);
+      WHERE user_id = $1 
+        AND EXTRACT(YEAR FROM date) = $2 
+        AND EXTRACT(MONTH FROM date) BETWEEN $3 AND $4
+      GROUP BY EXTRACT(MONTH FROM date), type
+      ORDER BY month`,
+      [userId, targetYear, startMonth + 1, endMonth + 1]
+    );
 
-    const results = stmt.all(
-      userId,
-      targetYear.toString(),
-      startMonth + 1,
-      endMonth + 1
-    ) as Array<{
-      month: string;
+    const results = result.rows as Array<{
+      month: number;
       type: string;
-      total: number;
+      total: string;
     }>;
 
     const labels: string[] = [];
@@ -172,15 +178,17 @@ export const getTrendsData = (
     const expenses: number[] = [];
 
     for (let i = startMonth; i <= endMonth; i++) {
-      const monthStr = (i + 1).toString().padStart(2, "0");
+      const monthNum = i + 1;
       labels.push(getMonthName(i));
 
-      const monthIncome =
-        results.find((r) => r.month === monthStr && r.type === "income")
-          ?.total || 0;
-      const monthExpenses =
-        results.find((r) => r.month === monthStr && r.type === "expense")
-          ?.total || 0;
+      const monthIncome = parseFloat(
+        results.find((r) => r.month === monthNum && r.type === "income")
+          ?.total || "0"
+      );
+      const monthExpenses = parseFloat(
+        results.find((r) => r.month === monthNum && r.type === "expense")
+          ?.total || "0"
+      );
 
       income.push(monthIncome);
       expenses.push(monthExpenses);
@@ -194,7 +202,7 @@ export const getTrendsData = (
     };
   }
 
-  // Default to current month daily breakdown if period is not monthly
+  // Default to current month daily breakdown
   const startDate = new Date(targetYear, currentDate.getMonth(), 1)
     .toISOString()
     .split("T")[0];
@@ -202,21 +210,22 @@ export const getTrendsData = (
     .toISOString()
     .split("T")[0];
 
-  const stmt = db.prepare(`
-    SELECT 
+  const result = await query(
+    `SELECT 
       date,
       type,
       COALESCE(SUM(amount), 0) as total
     FROM transactions 
-    WHERE user_id = ? AND date >= ? AND date <= ?
+    WHERE user_id = $1 AND date >= $2 AND date <= $3
     GROUP BY date, type
-    ORDER BY date
-  `);
+    ORDER BY date`,
+    [userId, startDate, endDate]
+  );
 
-  const results = stmt.all(userId, startDate, endDate) as Array<{
+  const results = result.rows as Array<{
     date: string;
     type: string;
-    total: number;
+    total: string;
   }>;
 
   // Create daily breakdown for current month
@@ -235,12 +244,14 @@ export const getTrendsData = (
       .split("T")[0];
     labels.push(day.toString());
 
-    const dayIncome =
+    const dayIncome = parseFloat(
       results.find((r) => r.date === dateStr && r.type === "income")?.total ||
-      0;
-    const dayExpenses =
+        "0"
+    );
+    const dayExpenses = parseFloat(
       results.find((r) => r.date === dateStr && r.type === "expense")?.total ||
-      0;
+        "0"
+    );
 
     income.push(dayIncome);
     expenses.push(dayExpenses);
@@ -256,47 +267,60 @@ export const getTrendsData = (
   };
 };
 
-export const getCategoryBreakdownData = (
-  userId: number,
+export const getCategoryBreakdownData = async (
+  userId: string, // UUID
   startDate: string,
   endDate: string
-): CategoryBreakdown => {
-  const stmt = db.prepare(`
-    SELECT 
+): Promise<CategoryBreakdown> => {
+  const result = await query(
+    `SELECT 
       type,
       category_id,
       COALESCE(SUM(amount), 0) as total
     FROM transactions 
-    WHERE user_id = ? AND date >= ? AND date <= ? AND category_id IS NOT NULL
+    WHERE user_id = $1 AND date >= $2 AND date <= $3 AND category_id IS NOT NULL
     GROUP BY type, category_id
-    ORDER BY total DESC
-  `);
+    ORDER BY total DESC`,
+    [userId, startDate, endDate]
+  );
 
-  const results = stmt.all(userId, startDate, endDate) as Array<{
+  const results = result.rows as Array<{
     type: string;
     category_id: number;
-    total: number;
+    total: string;
   }>;
 
   const incomeData = results.filter((r) => r.type === "income");
   const expenseData = results.filter((r) => r.type === "expense");
 
-  const totalIncome = incomeData.reduce((sum, item) => sum + item.total, 0);
-  const totalExpenses = expenseData.reduce((sum, item) => sum + item.total, 0);
+  const totalIncome = incomeData.reduce(
+    (sum, item) => sum + parseFloat(item.total),
+    0
+  );
+  const totalExpenses = expenseData.reduce(
+    (sum, item) => sum + parseFloat(item.total),
+    0
+  );
 
-  const income = incomeData.map((item) => ({
-    category: getCategoryById(item.category_id)?.name || "Unknown",
-    amount: item.total,
-    percentage:
-      totalIncome > 0 ? Math.round((item.total / totalIncome) * 100) : 0,
-  }));
+  const income = incomeData.map((item) => {
+    const amount = parseFloat(item.total);
+    return {
+      category: getCategoryById(item.category_id)?.name || "Unknown",
+      amount,
+      percentage:
+        totalIncome > 0 ? Math.round((amount / totalIncome) * 100) : 0,
+    };
+  });
 
-  const expenses = expenseData.map((item) => ({
-    category: getCategoryById(item.category_id)?.name || "Unknown",
-    amount: item.total,
-    percentage:
-      totalExpenses > 0 ? Math.round((item.total / totalExpenses) * 100) : 0,
-  }));
+  const expenses = expenseData.map((item) => {
+    const amount = parseFloat(item.total);
+    return {
+      category: getCategoryById(item.category_id)?.name || "Unknown",
+      amount,
+      percentage:
+        totalExpenses > 0 ? Math.round((amount / totalExpenses) * 100) : 0,
+    };
+  });
 
   return {
     income,
