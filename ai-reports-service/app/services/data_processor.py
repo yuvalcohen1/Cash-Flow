@@ -1,17 +1,51 @@
-# app/services/data_processor.py
-
 from datetime import datetime, date
 from collections import defaultdict
 from typing import List, Dict, Any
+from decimal import Decimal, ROUND_HALF_UP
 
 
 class FinancialDataProcessor:
     """Processes raw transaction data into structured insights"""
     
     def __init__(self, transactions: List[Dict], user_profile: Dict = None):
-        self.transactions = transactions
+        # Validate and filter transactions
+        self.transactions = [t for t in transactions if self._validate_transaction(t)]
+        
+        if len(self.transactions) < len(transactions):
+            # Log warning about invalid transactions
+            invalid_count = len(transactions) - len(self.transactions)
+            print(f"Warning: {invalid_count} invalid transactions filtered")
+        
         self.user_profile = user_profile or {}
         self.insights = {}
+
+    def _validate_transaction(self, t: Dict) -> bool:
+        """Validate transaction structure and data"""
+        required_fields = ['amount', 'date', 'type']
+        
+        # Check required fields exist
+        if not all(field in t for field in required_fields):
+            return False
+        
+        # Validate type
+        if t['type'] not in ['income', 'expense']:
+            return False
+        
+        # Validate amount is numeric and positive
+        try:
+            amount = float(t['amount'])
+            if amount < 0:
+                return False
+        except (ValueError, TypeError):
+            return False
+        
+        # Validate date can be parsed
+        try:
+            self._parse_date(t['date'])
+        except (ValueError, TypeError):
+            return False
+        
+        return True
     
     def _parse_date(self, date_value) -> datetime:
         """Parse date from various formats (string, date object, datetime)"""
@@ -25,6 +59,7 @@ class FinancialDataProcessor:
             return datetime.strptime(date_str, '%Y-%m-%d')
         else:
             raise ValueError(f"Unsupported date format: {type(date_value)}")
+        
     
     def process(self) -> Dict[str, Any]:
         """Main processing pipeline"""
@@ -56,10 +91,10 @@ class FinancialDataProcessor:
     
     def _calculate_summary(self) -> Dict:
         """Calculate high-level financial summary"""
-        total_income = sum(t['amount'] for t in self.transactions 
-                          if t['type'] == 'income')
-        total_expenses = sum(t['amount'] for t in self.transactions 
-                            if t['type'] == 'expense')
+        total_income = sum(Decimal(str(t['amount'])) for t in self.transactions 
+                  if t['type'] == 'income')
+        total_expenses = sum(Decimal(str(t['amount'])) for t in self.transactions 
+                  if t['type'] == 'expense')
         
         # Get num_days, default to 1 if not available yet
         time_period = self._get_time_period() if not self.insights else self.insights.get('time_period', {})
@@ -71,17 +106,17 @@ class FinancialDataProcessor:
             'net_savings': float(total_income - total_expenses),
             'savings_rate': float((total_income - total_expenses) / total_income * 100) 
                            if total_income > 0 else 0.0,
-            'avg_daily_spending': float(total_expenses / max(1, num_days))
+            'avg_daily_spending': float(total_expenses / Decimal(str(max(1, num_days))))
         }
     
     def _analyze_by_category(self) -> List[Dict]:
         """Analyze spending by category"""
-        category_data = defaultdict(lambda: {'total': 0, 'count': 0, 'transactions': []})
+        category_data = defaultdict(lambda: {'total': Decimal('0'), 'count': 0, 'transactions': []})
         
         for t in self.transactions:
             if t['type'] == 'expense':
                 cat = t.get('category_id', 'uncategorized')
-                category_data[cat]['total'] += float(t['amount'])
+                category_data[cat]['total'] += Decimal(str(t['amount']))
                 category_data[cat]['count'] += 1
                 category_data[cat]['transactions'].append(t)
         
@@ -95,9 +130,8 @@ class FinancialDataProcessor:
                 'num_transactions': int(data['count']),
                 'percentage_of_total': float((data['total'] / total_expenses * 100) 
                                       if total_expenses > 0 else 0),
-                'avg_transaction': float(data['total'] / data['count'] if data['count'] > 0 else 0),
-                'largest_transaction': float(max(data['transactions'], 
-                                          key=lambda x: x['amount'])['amount'])
+                'avg_transaction': float(data['total'] / Decimal(str(data['count'])) if data['count'] > 0 else 0),
+                'largest_transaction': float(max((Decimal(str(t['amount'])) for t in data['transactions']), default=0))
             })
         
         return sorted(result, key=lambda x: x['total_spent'], reverse=True)
@@ -109,10 +143,10 @@ class FinancialDataProcessor:
         if not income_txns:
             return {}
         
-        income_by_category = defaultdict(float)
+        income_by_category = defaultdict(lambda: Decimal('0'))
         for t in income_txns:
             cat = t.get('category_id', 'other')
-            income_by_category[cat] += float(t['amount'])
+            income_by_category[cat] += Decimal(str(t['amount']))
         
         largest = max(income_txns, key=lambda x: x['amount'])
         
@@ -145,6 +179,9 @@ class FinancialDataProcessor:
         dates = sorted([self._parse_date(t['date']) for t in expense_txns])
         intervals = [(dates[i+1] - dates[i]).days for i in range(len(dates)-1)]
         avg_days_between = sum(intervals) / len(intervals) if intervals else 0
+
+        if not by_day:
+            return {}
         
         return {
             'spending_by_day': {day: {
@@ -191,13 +228,32 @@ class FinancialDataProcessor:
         sorted_txns = sorted(expense_txns, 
                             key=lambda x: self._parse_date(x['date']))
         
-        mid = len(sorted_txns) // 2
-        first_half = sum(float(t['amount']) for t in sorted_txns[:mid])
-        second_half = sum(float(t['amount']) for t in sorted_txns[mid:])
+        # Find midpoint date
+        first_date = self._parse_date(sorted_txns[0]['date'])
+        last_date = self._parse_date(sorted_txns[-1]['date'])
+        mid_date = first_date + (last_date - first_date) / 2
         
-        if second_half > first_half * 1.1:
+        # Split by date
+        first_half = [t for t in sorted_txns if self._parse_date(t['date']) < mid_date]
+        second_half = [t for t in sorted_txns if self._parse_date(t['date']) >= mid_date]
+        
+        if not first_half or not second_half:
+            return 'insufficient_data'
+        
+        # Calculate days in each period
+        first_days = (mid_date - first_date).days or 1
+        second_days = (last_date - mid_date).days or 1
+        
+        # Normalize by daily spending rate
+        first_total = sum(Decimal(str(t['amount'])) for t in first_half)
+        second_total = sum(Decimal(str(t['amount'])) for t in second_half)
+        
+        first_daily = float(first_total / Decimal(str(first_days)))
+        second_daily = float(second_total / Decimal(str(second_days)))
+        
+        if second_daily > first_daily * 1.1:
             return 'increasing'
-        elif second_half < first_half * 0.9:
+        elif second_daily < first_daily * 0.9:
             return 'decreasing'
         else:
             return 'stable'
@@ -211,7 +267,11 @@ class FinancialDataProcessor:
         
         amounts = [float(t['amount']) for t in expense_txns]
         avg = sum(amounts) / len(amounts)
-        std = (sum((x - avg) ** 2 for x in amounts) / len(amounts)) ** 0.5
+        std = (sum((x - avg) ** 2 for x in amounts) / (len(amounts) - 1)) ** 0.5 if len(amounts) > 1 else 0
+
+        # If std is 0 or near-zero, all amounts are identical - no anomalies
+        if std < 0.01:
+            return []
         
         anomalies = []
         for t in expense_txns:
