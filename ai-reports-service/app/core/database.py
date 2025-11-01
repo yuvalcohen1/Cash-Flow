@@ -1,12 +1,8 @@
-# app/core/database.py
-
-import psycopg2
 from psycopg2.extras import RealDictCursor
 from psycopg2.pool import SimpleConnectionPool
 from typing import List, Dict, Optional
 from contextlib import contextmanager
 import json
-import os
 from app.core.config import settings
 from app.core.categories import get_category_name
 
@@ -83,7 +79,7 @@ class DatabaseManager:
                 # Convert UUID to string
                 transaction['user_id'] = str(transaction['user_id'])
                 # Convert category_id to name
-                transaction['category_id'] = get_category_name(transaction['category_id'])
+                transaction['category_id'] = get_category_name(int(transaction['category_id']))
                 transactions.append(transaction)
             
             return transactions

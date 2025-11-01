@@ -1,63 +1,51 @@
-# app/core/categories.py
+from enum import Enum
+from typing import Dict, NamedTuple
 
-# Category mappings - synced with main backend
-CATEGORIES = {
-    # Income Categories
-    1: "Salary",
-    2: "Freelance",
-    3: "Investment",
-    4: "Bonus",
-    5: "Rental Income",
-    6: "Business Income",
-    7: "Other Income",
+class TransactionType(str, Enum):
+    INCOME = "income"
+    EXPENSE = "expense"
+
+class CategoryInfo(NamedTuple):
+    name: str
+    type: TransactionType
+
+CATEGORIES: Dict[int, CategoryInfo] = {
+    # Income
+    1: CategoryInfo("Salary", TransactionType.INCOME),
+    2: CategoryInfo("Freelance", TransactionType.INCOME),
+    3: CategoryInfo("Investment", TransactionType.INCOME),
+    4: CategoryInfo("Bonus", TransactionType.INCOME),
+    5: CategoryInfo("Rental Income", TransactionType.INCOME),
+    6: CategoryInfo("Business Income", TransactionType.INCOME),
+    7: CategoryInfo("Other Income", TransactionType.INCOME),
     
-    # Expense Categories
-    8: "Food & Dining",
-    9: "Transportation",
-    10: "Shopping",
-    11: "Entertainment",
-    12: "Bills & Utilities",
-    13: "Healthcare",
-    14: "Education",
-    15: "Travel",
-    16: "Insurance",
-    17: "Home & Garden",
-    18: "Gifts & Donations",
-    19: "Personal Care",
-    20: "Subscriptions",
-    21: "Other Expense",
+    # Expenses
+    8: CategoryInfo("Food & Dining", TransactionType.EXPENSE),
+    9: CategoryInfo("Transportation", TransactionType.EXPENSE),
+    10: CategoryInfo("Shopping", TransactionType.EXPENSE),
+    11: CategoryInfo("Entertainment", TransactionType.EXPENSE),
+    12: CategoryInfo("Bills & Utilities", TransactionType.EXPENSE),
+    13: CategoryInfo("Healthcare", TransactionType.EXPENSE),
+    14: CategoryInfo("Education", TransactionType.EXPENSE),
+    15: CategoryInfo("Travel", TransactionType.EXPENSE),
+    16: CategoryInfo("Insurance", TransactionType.EXPENSE),
+    17: CategoryInfo("Home & Garden", TransactionType.EXPENSE),
+    18: CategoryInfo("Gifts & Donations", TransactionType.EXPENSE),
+    19: CategoryInfo("Personal Care", TransactionType.EXPENSE),
+    20: CategoryInfo("Subscriptions", TransactionType.EXPENSE),
+    21: CategoryInfo("Other Expense", TransactionType.EXPENSE),
 }
 
-CATEGORY_TYPES = {
-    # Income Categories
-    1: "income", 2: "income", 3: "income", 4: "income",
-    5: "income", 6: "income", 7: "income",
-    
-    # Expense Categories
-    8: "expense", 9: "expense", 10: "expense", 11: "expense",
-    12: "expense", 13: "expense", 14: "expense", 15: "expense",
-    16: "expense", 17: "expense", 18: "expense", 19: "expense",
-    20: "expense", 21: "expense",
-}
-
-
-def get_category_name(category_id) -> str:
-    """
-    Get category name from ID, return string version of ID if not found
-    """
+def get_category_name(category_id: int) -> str:
+    """Get category name from ID"""
     try:
-        cat_id = int(category_id)
-        return CATEGORIES.get(cat_id, f"Category {cat_id}")
+        return CATEGORIES.get(category_id, CategoryInfo(f"Category {category_id}", TransactionType.EXPENSE)).name
     except (ValueError, TypeError):
         return str(category_id)
 
-
-def get_category_type(category_id) -> str:
-    """
-    Get category type (income/expense) from ID
-    """
+def get_category_type(category_id: int) -> str:
+    """Get category type (income/expense) from ID"""
     try:
-        cat_id = int(category_id)
-        return CATEGORY_TYPES.get(cat_id, "unknown")
+        return CATEGORIES.get(category_id, CategoryInfo("Unknown", TransactionType.EXPENSE)).type.value
     except (ValueError, TypeError):
         return "unknown"
