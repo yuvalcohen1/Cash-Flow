@@ -13,23 +13,20 @@ A full-stack personal finance management application with AI-powered financial i
 ## Tech Stack
 
 **Frontend:**
-
 - React + TypeScript
 - TailwindCSS
 - Recharts (data visualization)
 - React Markdown
 
 **Backend (Main API):**
-
 - Express.js + TypeScript
-- SQLite database
+- Supabase (PostgreSQL database)
 - JWT authentication
 
 **AI Service:**
-
 - FastAPI (Python)
 - Google Gemini 1.5 Flash
-- SQLite database (shared with main backend)
+- Supabase (PostgreSQL database, shared with main backend)
 
 ## Project Structure
 
@@ -44,6 +41,7 @@ A full-stack personal finance management application with AI-powered financial i
 - Node.js 18+
 - Python 3.9+
 - npm or yarn
+- Supabase account and project
 
 ## Installation
 
@@ -55,14 +53,15 @@ npm install
 ```
 
 Create `.env`:
-
 ```env
 PORT=3000
 JWT_SECRET=your-secret-key-here
+SUPABASE_URL=your-supabase-url
+SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
+DATABASE_URL=your-postgresql-connection-string
 ```
 
 Run:
-
 ```bash
 npm run dev
 ```
@@ -75,17 +74,17 @@ pip install -r requirements.txt
 ```
 
 Create `.env`:
-
 ```env
 GEMINI_API_KEY=your-gemini-api-key
 GEMINI_MODEL=your-gemini-model
 JWT_SECRET_KEY=your-secret-key-here  # Must match backend
 JWT_ALGORITHM=HS256
-DATABASE_PATH=../data/app.db
+SUPABASE_URL=your-supabase-url
+SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
+DATABASE_URL=your-postgresql-connection-string
 ```
 
 Run:
-
 ```bash
 python main.py
 ```
@@ -100,9 +99,7 @@ npm run dev
 
 ### 4. Database Setup
 
-```bash
-DB will be set up as soon as you run the Node.js backend
-```
+Set up your Supabase database tables and schemas according to your application requirements. Ensure your database is properly configured before running the backend services.
 
 ## API Endpoints
 
@@ -137,7 +134,6 @@ DB will be set up as soon as you run the Node.js backend
 ## AI Report Features
 
 The AI service analyzes your transactions and provides:
-
 - Overall financial health snapshot
 - Savings rate analysis
 - Spending patterns by day/category
